@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "FolderSynchronizer": {
+      "commandName": "Project",
+      "commandLineArgs": "-s \"C:\\SyncTest\\Source\" -r \"C:\\SyncTest\\Replica\" -i 5000 -l \"C:\\SyncTest\\sync.log\" -c MD5"
+    }
+  }
+}
