@@ -1,21 +1,23 @@
-﻿using FolderSynchronizer.Comparers;
-using FolderSynchronizer.Enumerators;
+using System.Security.Cryptography;
+using FolderSynchronizer.Comparers;
+using FolderSynchronizer.Enums;
+using FolderSynchronizer.Abstraction;
+using FolderSynchronizer.Models;
 using Microsoft.Extensions.Logging;
 using NLog.Config;
 using NLog.Extensions.Logging;
 using NLog.Targets;
-using System.Security.Cryptography;
 
 namespace FolderSynchronizer;
 
 public class Program
 {
-    static async Task Main(string[] args)
+    static async Task<int> Main(string[] args)
     {
-        Options? options = Processor.ParseArguments(args);
+        CommandLineOptions? options = CommandLineParser.ParseArguments(args);
         if (options is null)
         {
-            return;
+            return -1;
         }
         var loggerConfig = new LoggingConfiguration();
         var fileTarget = new FileTarget("file") { FileName = options.LogFilePath };
@@ -33,14 +35,7 @@ public class Program
         {
             using CancellationTokenSource cts = new();
 
-
-
-
-
-
-
-
-            ILogger<Synchronizer> logger = loggerFactory.CreateLogger<Synchronizer>();
+            ILogger<FolderSynchronizer> logger = loggerFactory.CreateLogger<FolderSynchronizer>();
 
             Console.CancelKeyPress += (_, e) =>
             {
@@ -48,7 +43,6 @@ public class Program
                 logger.LogInformation("Cancellation requested. Stopping synchronization...");
                 cts.Cancel();
             };
-
 
             IFileComparer fileComparer = options.Comparator switch
             {
@@ -59,17 +53,18 @@ public class Program
 
             };
 
-            Synchronizer synchronizer = new(
+            FolderSynchronizer synchronizer = new(
                 options, logger, fileComparer);
 
             await synchronizer.StartAsync(cts.Token);
 
             logger.LogInformation("Synchronization process completed.");
+            return 0;
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Critical error occurred, unable to proceed: {ex.Message}");
-            Environment.Exit(1);
+            return 1;
         }
         finally
         {
