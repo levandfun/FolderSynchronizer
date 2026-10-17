@@ -1,3 +1,5 @@
 <Solution>
+  <Project Path="FolderSynchronizer.E2ETests/FolderSynchronizer.E2ETests.csproj" />
+  <Project Path="FolderSynchronizer.Tests/FolderSynchronizer.Tests.csproj" />
   <Project Path="FolderSynchronizer/FolderSynchronizer.csproj" />
 </Solution>
