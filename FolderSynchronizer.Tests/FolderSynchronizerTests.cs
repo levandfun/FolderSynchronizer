@@ -10,14 +10,16 @@ namespace FolderSynchronizer.Tests;
 
 public class FolderSynchronizerTests : IDisposable
 {
+    private readonly string _testDir;
     private readonly string _sourcePath;
     private readonly string _replicaPath;
     private readonly ILogger<FolderSynchronizer> _logger;
     private readonly IFileComparer _fileComparer;
     public FolderSynchronizerTests()
     {
-        _sourcePath = Path.Combine(Path.GetTempPath(), "Tests_Source");
-        _replicaPath = Path.Combine(Path.GetTempPath(), "Tests_Replica");
+        _testDir = Path.Combine(Path.GetTempPath(), "ComparerTests_" + Guid.NewGuid().ToString("N"));
+        _sourcePath = Path.Combine(_testDir, "Tests_Source");
+        _replicaPath = Path.Combine(_testDir, "Tests_Replica");
         Directory.CreateDirectory(_sourcePath);
         Directory.CreateDirectory(_replicaPath);
 
@@ -37,12 +39,17 @@ public class FolderSynchronizerTests : IDisposable
         string sourceFile = Path.Combine(subDir, "test.txt");
         await File.WriteAllTextAsync(sourceFile, "Hello World");
 
-        var options = CreateOptions();
-        using var cts = new CancellationTokenSource(millisecondsDelay:150);
+        FolderSynchronizer folderSynchronizer = CreateOptions();
+        using CancellationTokenSource cts = new CancellationTokenSource(millisecondsDelay: 1000);
 
-        await options.StartAsync(cts.Token);
+        var syncTask = folderSynchronizer.StartAsync(cts.Token);
+
 
         string replicaFile = Path.Combine(_replicaPath, "SubFolder", "test.txt");
+        while (!cts.IsCancellationRequested && !(File.Exists(replicaFile)))
+        {
+            await Task.Delay(10);
+        }
         Assert.True(File.Exists(replicaFile));
         Assert.Equal("Hello World", await File.ReadAllTextAsync(replicaFile));
     }
@@ -56,11 +63,14 @@ public class FolderSynchronizerTests : IDisposable
         await File.WriteAllTextAsync(replicaFile, "Old Content");
         await File.WriteAllTextAsync(sourceFile, "New Content");
 
-        var options = CreateOptions();
-        using var cts = new CancellationTokenSource(millisecondsDelay: 150);
+        FolderSynchronizer folderSynchronizer = CreateOptions();
+        using CancellationTokenSource cts = new CancellationTokenSource(millisecondsDelay: 1000);
 
-        await options.StartAsync(cts.Token);
-
+        var syncTask = folderSynchronizer.StartAsync(cts.Token);
+        while (!cts.IsCancellationRequested && !(await File.ReadAllTextAsync(replicaFile) == "New Content"))
+        {
+            await Task.Delay(10);
+        }
         Assert.Equal("New Content", await File.ReadAllTextAsync(replicaFile));
     }
     [Fact]
@@ -71,11 +81,15 @@ public class FolderSynchronizerTests : IDisposable
         string extraFile = Path.Combine(extraDir, "extra.txt");
         await File.WriteAllTextAsync(extraFile, "Should be deleted");
 
-        var options = CreateOptions();
-        using var cts = new CancellationTokenSource(millisecondsDelay: 150);
+        FolderSynchronizer folderSynchronizer = CreateOptions();
+        using CancellationTokenSource cts = new CancellationTokenSource(millisecondsDelay: 1000);
 
-        await options.StartAsync(cts.Token);
+        var syncTask = folderSynchronizer.StartAsync(cts.Token);
 
+        while (!cts.IsCancellationRequested && (File.Exists(extraFile) || Directory.Exists(extraDir)))
+        {
+            await Task.Delay(10);
+        }
         Assert.False(File.Exists(extraFile));
         Assert.False(Directory.Exists(extraDir));
     }
@@ -85,17 +99,20 @@ public class FolderSynchronizerTests : IDisposable
         Directory.Delete(_replicaPath);
         await File.WriteAllTextAsync(Path.Combine(_sourcePath, "test.txt"), "data");
 
-        var options = CreateOptions();
-        using var cts = new CancellationTokenSource(millisecondsDelay: 150);
+        FolderSynchronizer folderSynchronizer = CreateOptions();
+        using CancellationTokenSource cts = new CancellationTokenSource(millisecondsDelay: 1000);
 
-        await options.StartAsync(cts.Token);
-
+        var syncTask = folderSynchronizer.StartAsync(cts.Token);
+        while (!cts.IsCancellationRequested && (!Directory.Exists(_replicaPath) || !File.Exists(Path.Combine(_replicaPath, "test.txt"))))
+        {
+            await Task.Delay(10);
+        }
         Assert.True(Directory.Exists(_replicaPath));
         Assert.True(File.Exists(Path.Combine(_replicaPath, "test.txt")));
     }
     private FolderSynchronizer CreateOptions()
     {
-        var options = new CommandLineOptions
+        CommandLineOptions options = new CommandLineOptions
         {
             SourcePath = _sourcePath,
             ReplicaPath = _replicaPath,

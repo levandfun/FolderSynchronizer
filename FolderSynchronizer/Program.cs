@@ -1,7 +1,8 @@
 using System.Security.Cryptography;
+using FolderSynchronizer.Abstraction;
 using FolderSynchronizer.Comparers;
 using FolderSynchronizer.Enums;
-using FolderSynchronizer.Abstraction;
+using FolderSynchronizer.Helpers;
 using FolderSynchronizer.Models;
 using Microsoft.Extensions.Logging;
 using NLog.Config;
@@ -46,15 +47,15 @@ public class Program
 
             IFileComparer fileComparer = options.Comparator switch
             {
-                EComparator.MD5 => fileComparer = new HashComparer(MD5.HashDataAsync),
-                EComparator.SHA256 => fileComparer = new HashComparer(SHA256.HashDataAsync),
-                EComparator.NONE => fileComparer = new FastComparer(),
+                EComparator.MD5 => new HashComparer(MD5.HashDataAsync),
+                EComparator.SHA256 => new HashComparer(SHA256.HashDataAsync),
+                EComparator.NONE => new FastComparer(),
+                EComparator.BINARY => new BinaryComparer(),
                 _ => throw new InvalidOperationException("No comparator was found")
 
             };
 
-            FolderSynchronizer synchronizer = new(
-                options, logger, fileComparer);
+            FolderSynchronizer synchronizer = new (options, logger, fileComparer);
 
             await synchronizer.StartAsync(cts.Token);
 

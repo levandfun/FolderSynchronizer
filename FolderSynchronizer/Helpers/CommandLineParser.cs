@@ -3,7 +3,7 @@ using CommandLine;
 using FolderSynchronizer.Models;
 
 
-namespace FolderSynchronizer;
+namespace FolderSynchronizer.Helpers;
 
 
 public static class CommandLineParser
@@ -18,13 +18,13 @@ public static class CommandLineParser
     private static T GetDefaultValue<T>(string propertyName)
     {
         OptionAttribute? optionAttribute = typeof(CommandLineOptions).GetProperty(propertyName)?.GetCustomAttributes(typeof(OptionAttribute), true).FirstOrDefault() as OptionAttribute;
-        if (optionAttribute is null || optionAttribute.Default is null || !optionAttribute.Default.CanCast<T>())
+        if (optionAttribute is null || optionAttribute.Default is null || !typeof(T).IsAssignableFrom(optionAttribute.Default.GetType()))
             throw new Exception($"Property {propertyName} does not have default option attribute");
         return (T)optionAttribute.Default;
     }
     private static void ValidateArguments(ref CommandLineOptions? options)
     {
-        
+
         if (options == null)
             return;
         CommandLineOptions newOptions = new CommandLineOptions()

@@ -12,9 +12,9 @@ public class EndToEndTests : IDisposable
     public EndToEndTests()
     {
         _testRoot = Path.Combine(Path.GetTempPath(), "E2ESyncTests_");
-        _sourcePath = Path.Combine(Path.GetTempPath(), "Source");
-        _replicaPath = Path.Combine(Path.GetTempPath(), "Replica");
-        _logFilePath = Path.Combine(Path.GetTempPath(), "sync.log");
+        _sourcePath = Path.Combine(_testRoot, "Source");
+        _replicaPath = Path.Combine(_testRoot, "Replica");
+        _logFilePath = Path.Combine(_testRoot, "sync.log");
 
         Directory.CreateDirectory(_sourcePath);
         Directory.CreateDirectory(_replicaPath);

@@ -55,8 +55,8 @@ public class FolderSynchronizer(CommandLineOptions options, ILogger<FolderSynchr
     }
     private async Task SynchronizeFilesAndDirectoriesAsync(DirectoryInfo sourceDirectory, CancellationToken cancellationToken)
     {
-        //EnumerateDirectories returns directories in top-down order, ensuring parents are created before children
-        foreach (DirectoryInfo dir in sourceDirectory.EnumerateDirectories("*", SearchOption.AllDirectories))
+        IOrderedEnumerable<DirectoryInfo> sourceDirs = sourceDirectory.GetDirectories("*", SearchOption.AllDirectories).OrderBy(d => d.FullName.Length);
+        foreach (DirectoryInfo dir in sourceDirs)
         {
             cancellationToken.ThrowIfCancellationRequested();
             try
